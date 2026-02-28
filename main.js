@@ -50,4 +50,10 @@ function main() {
     "https://web.cs.wpi.edu/~jmcuneo/cs4731/project3/bunny.obj",
     "https://web.cs.wpi.edu/~jmcuneo/cs4731/project3/bunny.mtl",
   );
+
+  let fork = new Model(
+      "data2/lowpoly-fork.obj",
+      "data2/lowpoly-fork.mtl"
+  )
+  console.log(fork)
 }
