@@ -1,15 +1,26 @@
 let gl;
 let program;
+let canvas;
 
 let table;
 let plate;
+let glass;
+let fork;
+
+let cube;
 
 let tableCache = { vertices: [] };
 let plateCache = { vertices: [] };
+let glassCache = { vertices: [] };
+let forkCache = { vertices: [] };
+
+let cubeCache = { vertices: [] };
+
+
 
 function main() {
   // Retrieve <canvas> element
-  let canvas = document.getElementById("webgl");
+  canvas = document.getElementById("webgl");
 
   // Get the rendering context for WebGL
   gl = WebGLUtils.setupWebGL(canvas, undefined);
@@ -30,11 +41,13 @@ function main() {
   program = initShaders(gl, "vshader", "fshader");
   gl.useProgram(program);
 
+  gl.enable(gl.DEPTH_TEST);
+
   // Initialize projection matrix
   pushMat4Uniform(
     mult(
       perspective(45, canvas.width / canvas.height, 0.1, 500),
-      lookAt(vec3(2, 1, 2), vec3(0, 0, 0), vec3(0, 1, 0)),
+      lookAt(vec3(2, 0, 2), vec3(0, 0, 0), vec3(0, 1, 0)),
     ),
     "projMatrix",
   );
@@ -42,20 +55,49 @@ function main() {
   // Load the models
   table = new Model("data2/wooden_table.obj", "data2/wooden_table.mtl");
   plate = new Model("data2/plate.obj", "data2/plate.mtl");
+  glass = new Model("data2/tall-drinking-glass.obj", "data2/tall-drinking-glass.mtl");
+  fork = new Model("data2/lowpoly-fork.obj", "data2/lowpoly-fork.mtl");
+
+  cube = new Model("data2/cube.obj", "data2/cube.mtl");
 
   // Start render loop
   render();
 }
-
+let time=0.0;
 function render() {
+  time+=0.01
+
+
+
   // Clear canvas by clearing the color buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  //Update camera matrix
+  pushMat4Uniform(
+      mult(
+          perspective(45, canvas.width / canvas.height, 0.1, 500),
+          lookAt(vec3(1, 1, 2), vec3(0, 0, 0), vec3(0, 1, 0)),
+      ),
+      "projMatrix",
+  );
+
   // Render table
-  renderModel(table, translate(0, 80.5, 0), tableCache);
+  renderModel(table, translate(.2, 0.18, 0), tableCache);
 
   // Render plate
-  renderModel(plate, translate(0, 0, 0), plateCache);
+  renderModel(plate, mult(translate(0,0,-.3),mult(scalem(0.5,0.5,0.5),rotateX(-90))), plateCache);
+
+  // Render glass
+  renderModel(glass, mult(translate(0.2,0,-0.1),rotateX(-90)), glassCache);
+
+  // Render fork
+  renderModel(fork, mult(translate(-0.2,.02,-0.3),mult(rotateZ(90),scalem(0.05,0.05,0.05))), forkCache);
+
+  // Render cubes
+  renderModel(cube, mult(translate(0.02,.02,-.34),scalem(0.01,0.01,0.01)), cubeCache);
+  renderModel(cube, mult(translate(-0.01,.02,-.23),scalem(0.01,0.01,0.01)), cubeCache);
+  renderModel(cube, mult(translate(-0.05,.02,-.32),scalem(0.01,0.01,0.01)), cubeCache);
+
 
   window.requestAnimationFrame(render);
 }
