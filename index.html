@@ -5,16 +5,25 @@
     <title>CS 4731 Final Project Part I</title>
     <script id="vshader" type="x-shader/x-vertex">
       attribute vec4 vPosition;
+      attribute vec4 vColor;
+      uniform mat4 projMatrix;
+      uniform mat4 modelMatrix;
+
+      varying vec4 fColor;
 
       void main() {
-          gl_Position = vPosition;
+          gl_Position = projMatrix * modelMatrix * vPosition;
+          fColor = vec4(1.0, 1.0, 1.0, 1.0);
       }
     </script>
 
     <script id="fshader" type="x-shader/x-fragment">
       precision mediump float;
+
+      varying vec4 fColor;
+
       void main() {
-              gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+              gl_FragColor = fColor;
           }
     </script>
 
