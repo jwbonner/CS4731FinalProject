@@ -16,6 +16,10 @@ let forkCache = { vertices: [] };
 
 let cubeCache = { vertices: [] };
 
+let alpha=0;
+let beta = 1;
+let playing=true;
+
 function main() {
   // Retrieve <canvas> element
   canvas = document.getElementById("webgl");
@@ -61,24 +65,32 @@ function main() {
 
   cube = new Model("data2/cube.obj", "data2/cube.mtl");
 
+  document.addEventListener("keydown", (event)=>getKeyDown(event))
+
   // Start render loop
   render();
 }
-let time = -1;
+
+let realtime=0
+let time= 0;
 function render() {
-  time += 0.01;
-  time = time % 5;
+  if(playing) {
+    realtime += 0.01
+  }
+  realtime=realtime%8
+  time = Math.min(realtime,8-realtime)
+  console.log(time)
 
   // Clear canvas by clearing the color buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   //Update camera matrix
   pushMat4Uniform(
-    mult(
-      perspective(45, canvas.width / canvas.height, 0.1, 500),
-      lookAt(vec3(0, 0, 1), vec3(0, 0, 0), vec3(0, 1, 0)),
-    ),
-    "projMatrix",
+      mult(
+          perspective(45, canvas.width / canvas.height, 0.1, 500),
+          lookAt(vec3(2*Math.sin(alpha), beta, 2*Math.cos(alpha)), vec3(0, 0, 0), vec3(0, 1, 0)),
+      ),
+      "projMatrix",
   );
 
   // Render table
@@ -98,23 +110,22 @@ function render() {
   let forkAnimateTime2 = Math.min(1.0, Math.max(0.0, time - 2.0));
   let forkAnimateTime3 = Math.min(1.0, Math.max(0.0, time - 3.0));
 
-  let forkRotation = rotateX(90 * forkAnimateTime1);
-  let forkUp = translate(0, 0.18 * forkAnimateTime3, 0);
-  let forkTranslate = mult(
-    forkUp,
-    mult(
-      translate(
-        0.15 * forkAnimateTime2,
-        0.12 * forkAnimateTime2,
-        -0.01 * forkAnimateTime2,
-      ),
-      translate(
-        0.15 * (forkAnimateTime1 - forkAnimateTime2),
-        0.3 * (forkAnimateTime1 - forkAnimateTime2),
-        -0.01 * (forkAnimateTime1 - forkAnimateTime2),
-      ),
-    ),
+  let forkRotation = rotateX(90*forkAnimateTime1)
+  let forkUp = translate(0,0.18*forkAnimateTime3,0);
+  let forkTranslate = mult(forkUp,
+      mult(
+          translate(
+              0.15*forkAnimateTime2,
+              0.12*forkAnimateTime2,
+              -0.02*forkAnimateTime2),
+          translate(
+              0.15*(forkAnimateTime1-forkAnimateTime2),
+              0.3*(forkAnimateTime1-forkAnimateTime2),
+              -0.02*(forkAnimateTime1-forkAnimateTime2)
+          )
+      )
   );
+
 
   //Values for default fork positioning
   let forkBaseTranslate = translate(-0.2, 0.015, -0.3);
@@ -169,6 +180,29 @@ function render() {
   );
 
   window.requestAnimationFrame(render);
+}
+
+
+function getKeyDown(e){
+  console.log(e.key)
+  if(e.key==="ArrowLeft"){
+    alpha-=0.1
+  }
+  if(e.key==="ArrowRight"){
+    alpha+=0.1
+  }
+  if(e.key==="ArrowUp"){
+    beta+=0.1
+  }
+  if(e.key==="ArrowDown"){
+    beta-=0.1
+  }
+  if(e.key===" "){
+    playing=!playing;
+  }
+  if(e.key.toUpperCase()==="R"){
+    realtime=0;
+  }
 }
 
 function renderModel(model, modelMatrix, cache) {
