@@ -16,8 +16,6 @@ let forkCache = { vertices: [] };
 
 let cubeCache = { vertices: [] };
 
-
-
 function main() {
   // Retrieve <canvas> element
   canvas = document.getElementById("webgl");
@@ -55,7 +53,10 @@ function main() {
   // Load the models
   table = new Model("data2/wooden_table.obj", "data2/wooden_table.mtl");
   plate = new Model("data2/plate.obj", "data2/plate.mtl");
-  glass = new Model("data2/tall-drinking-glass.obj", "data2/tall-drinking-glass.mtl");
+  glass = new Model(
+    "data2/tall-drinking-glass.obj",
+    "data2/tall-drinking-glass.mtl",
+  );
   fork = new Model("data2/lowpoly-fork.obj", "data2/lowpoly-fork.mtl");
 
   cube = new Model("data2/cube.obj", "data2/cube.mtl");
@@ -63,61 +64,109 @@ function main() {
   // Start render loop
   render();
 }
-let time=-1;
+let time = -1;
 function render() {
-  time+=0.01
-  time=time%5
+  time += 0.01;
+  time = time % 5;
 
   // Clear canvas by clearing the color buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   //Update camera matrix
   pushMat4Uniform(
-      mult(
-          perspective(45, canvas.width / canvas.height, 0.1, 500),
-          lookAt(vec3(0, 0, 1), vec3(0, 0, 0), vec3(0, 1, 0)),
-      ),
-      "projMatrix",
+    mult(
+      perspective(45, canvas.width / canvas.height, 0.1, 500),
+      lookAt(vec3(0, 0, 1), vec3(0, 0, 0), vec3(0, 1, 0)),
+    ),
+    "projMatrix",
   );
 
   // Render table
-  let tableTransform=translate(.2, 0.18, 0)
+  let tableTransform = translate(0.2, 0.18, 0);
   renderModel(table, tableTransform, tableCache);
 
-
-
   // Render glass
-  let glassBaseTransform=rotateX(-90)
-  renderModel(glass, mult(translate(0.2,0,-0.1),glassBaseTransform), glassCache);
+  let glassBaseTransform = rotateX(-90);
+  renderModel(
+    glass,
+    mult(translate(0.2, 0, -0.1), glassBaseTransform),
+    glassCache,
+  );
 
   // Render fork
-  let forkAnimateTime1=Math.min(1.0,Math.max(0.0,time-1.0))
-  let forkAnimateTime2=Math.min(1.0,Math.max(0.0,time-2.0))
-  let forkAnimateTime3 = Math.min(1.0,Math.max(0.0,time-3.0))
+  let forkAnimateTime1 = Math.min(1.0, Math.max(0.0, time - 1.0));
+  let forkAnimateTime2 = Math.min(1.0, Math.max(0.0, time - 2.0));
+  let forkAnimateTime3 = Math.min(1.0, Math.max(0.0, time - 3.0));
 
-  let forkRotation = rotateX(90*forkAnimateTime1)
-  let forkUp = translate(0,0.18*forkAnimateTime3,0);
-  let forkTranslate = mult(forkUp,mult(translate(0.15*forkAnimateTime2,0.12*forkAnimateTime2,-0.01*forkAnimateTime2),translate(0.15*(forkAnimateTime1-forkAnimateTime2),0.3*(forkAnimateTime1-forkAnimateTime2),-0.01*(forkAnimateTime1-forkAnimateTime2))))
-
+  let forkRotation = rotateX(90 * forkAnimateTime1);
+  let forkUp = translate(0, 0.18 * forkAnimateTime3, 0);
+  let forkTranslate = mult(
+    forkUp,
+    mult(
+      translate(
+        0.15 * forkAnimateTime2,
+        0.12 * forkAnimateTime2,
+        -0.01 * forkAnimateTime2,
+      ),
+      translate(
+        0.15 * (forkAnimateTime1 - forkAnimateTime2),
+        0.3 * (forkAnimateTime1 - forkAnimateTime2),
+        -0.01 * (forkAnimateTime1 - forkAnimateTime2),
+      ),
+    ),
+  );
 
   //Values for default fork positioning
-  let forkBaseTranslate=translate(-0.2,.015,-0.3)
-  let forkBaseTransform=mult(rotateZ(90),scalem(0.05,0.05,0.05))
-  renderModel(fork, mult(forkTranslate,mult(forkBaseTranslate,mult(forkRotation,forkBaseTransform))), forkCache);
+  let forkBaseTranslate = translate(-0.2, 0.015, -0.3);
+  let forkBaseTransform = mult(rotateZ(90), scalem(0.05, 0.05, 0.05));
+  renderModel(
+    fork,
+    mult(
+      forkTranslate,
+      mult(forkBaseTranslate, mult(forkRotation, forkBaseTransform)),
+    ),
+    forkCache,
+  );
 
-  let plateSlideTime = Math.min(time, 1.0)
-  let plateGroupTransform=translate(0.8*(1-plateSlideTime),0,0)
+  let plateSlideTime = Math.min(time, 1.0);
+  let plateGroupTransform = translate(0.8 * (1 - plateSlideTime), 0, 0);
 
   // Render plate
-  let plateBaseTransform=mult(translate(0,0,-.3),mult(scalem(0.5,0.5,0.5),rotateX(-90)))
-  renderModel(plate, mult(plateGroupTransform,plateBaseTransform), plateCache);
+  let plateBaseTransform = mult(
+    translate(0, 0, -0.3),
+    mult(scalem(0.5, 0.5, 0.5), rotateX(-90)),
+  );
+  renderModel(plate, mult(plateGroupTransform, plateBaseTransform), plateCache);
 
   // Render cubes
-  renderModel(cube, mult(plateGroupTransform,mult(translate(0.02,.02,-.34),scalem(0.01,0.01,0.01))), cubeCache);
-  renderModel(cube, mult(plateGroupTransform,mult(translate(-0.01,.02,-.23),scalem(0.01,0.01,0.01))), cubeCache);
+  renderModel(
+    cube,
+    mult(
+      plateGroupTransform,
+      mult(translate(0.02, 0.02, -0.34), scalem(0.01, 0.01, 0.01)),
+    ),
+    cubeCache,
+  );
+  renderModel(
+    cube,
+    mult(
+      plateGroupTransform,
+      mult(translate(-0.01, 0.02, -0.23), scalem(0.01, 0.01, 0.01)),
+    ),
+    cubeCache,
+  );
 
-  renderModel(cube, mult(forkUp,mult(plateGroupTransform,mult(translate(-0.05,.02,-.32),scalem(0.01,0.01,0.01)))), cubeCache);
-
+  renderModel(
+    cube,
+    mult(
+      forkUp,
+      mult(
+        plateGroupTransform,
+        mult(translate(-0.05, 0.02, -0.32), scalem(0.01, 0.01, 0.01)),
+      ),
+    ),
+    cubeCache,
+  );
 
   window.requestAnimationFrame(render);
 }
