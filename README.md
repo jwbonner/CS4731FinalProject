@@ -1,10 +1,13 @@
 # CS4731FinalProject
+
 ## Table Food Scene
+
 Our project is a simple scene consisting of a table, fork, glass, plate, and
 food within a house. The plate slides to the center of the table and the fork
 lifts up and picks up some food.
 
 ### Topics:
+
 1. There are several complex 3D models achieved by importing .OBJ files (fork, plate, table, glass).
 2. There are several model transformations for animation. The plate slides across the table, the fork lifts, and the food lifts.
 3. There is a point light illuminating the scene using Phong shading.
@@ -25,10 +28,11 @@ lifts up and picks up some food.
     6. R - Restart animation
 
 ### Challenges:
-We ran into several challenges when implementing this project. 
 
-When importing OBJ files, values represented using scientific notation were 
-not parsing properly causing seemingly random points to stick out of the models. 
+We ran into several challenges when implementing this project.
+
+When importing OBJ files, values represented using scientific notation were
+not parsing properly causing seemingly random points to stick out of the models.
 We fixed this by adding additional parsing functionality.
 
 When implementing the skybox there were issues with having multiple different
@@ -36,6 +40,16 @@ textures and having multiple different faces in the texture. We fixed this by
 using a separate texture with a boolean to detect which texture should be used
 and loading 6 different images with detection for when they all loaded.
 
+When implementing the spotlight, the large flat sides of the table model made
+it difficult to create an obvious spotlight since the interpolation of the L
+vector does not create a distinct shape over most of the surfaces. To fix this,
+we positioned the spotlight to the side of the scene so it primarily illuminates
+the table legs, which have more complex geometry.
+
+When implementing the shadow, it was challenging to ensure that the table, shadow,
+and fork (when sititng on the table) were appropriately separated. To fix this,
+we added a small gap in Y between each object to ensure that they occlude as expected.
+
 Responsibilities:
-Jonah - Rendering models, Point lighting, Spotlight, Textures, Shadows, Reflection, Refraction
+Jonah - Rendering models, Point lighting, Spotlight, Textures, Shadow, Reflection, Refraction, Asset hosting
 Matt - Finding models, Arranging scene, Animation, Keyboard controls, Camera movement, Skybox, Readme
