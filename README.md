@@ -20,8 +20,9 @@ lifts up and picks up some food.
     1. Space - Toggle animation on and off
     2. S - Toggle shadows on and off
     3. L - Toggle diffuse/specular of point light
-    4. Arrow Keys - Control the camera
-    5. R - Restart animation
+    4. C - Toggle camera animation
+    5. Arrow Keys - Control the camera if camera animation is disabled
+    6. R - Restart animation
 
 ### Challenges:
 We ran into several challenges when implementing this project. 
