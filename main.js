@@ -16,10 +16,12 @@ let forkCache = { vertices: [], normals: [], texCoords: [] };
 
 let cubeCache = { vertices: [], normals: [], texCoords: [] };
 
-var lightPosition = vec4(5, -2, 5, 1.0);
-var lightDiffuse = vec4(0.3, 0.3, 0.3, 1.0);
+var lightPosition = vec4(5, -5, 5, 1.0);
+var spotlightPosition = vec4(-5, 0, 0, 1.0);
+var spotlightDirection = vec3(5, 0, 0);
+var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(0.2, 0.2, 0.2, 1.0);
-var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+var lightAmbient = vec4(1.0, 1.0, 1.0, 1.0);
 
 let alpha = 0.4;
 let beta = 1;
@@ -130,6 +132,8 @@ function render() {
 
   // Configure lighting
   pushVec4Uniform(lightPosition, "lightPosition");
+  pushVec4Uniform(spotlightPosition, "spotlightPosition");
+  pushVec3Uniform(spotlightDirection, "spotlightDirection");
   pushVec4Uniform(lightDiffuse, "lightDiffuse");
   pushVec4Uniform(lightSpecular, "lightSpecular");
   pushVec4Uniform(lightAmbient, "lightAmbient");
@@ -191,7 +195,7 @@ function render() {
       mult(forkBaseTranslate, mult(forkRotation, forkBaseTransform)),
     ),
     120,
-    vec4(0.2, 0.2, 0.2, 1.0),
+    vec4(1.0, 1.0, 1.0, 1.0),
     forkCache,
   );
   pushIntUniform(0, "isReflective");
@@ -209,7 +213,7 @@ function render() {
     plate,
     mult(plateGroupTransform, plateBaseTransform),
     60,
-    vec4(0.2, 0.2, 0.2, 1.0),
+    vec4(1.0, 1.0, 1.0, 1.0),
     plateCache,
   );
   pushIntUniform(0, "isReflective");
