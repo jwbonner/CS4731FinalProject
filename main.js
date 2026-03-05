@@ -21,10 +21,9 @@ var lightDiffuse = vec4(0.3, 0.3, 0.3, 1.0);
 var lightSpecular = vec4(0.2, 0.2, 0.2, 1.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 
-let alpha=0.4;
+let alpha = 0.4;
 let beta = 1;
 let playing = true;
-
 
 function main() {
   // Retrieve <canvas> element
@@ -81,24 +80,21 @@ function main() {
     configureTexture(image);
   };
 
-
   // Load Cubemap
-  let loadedImages=0
-  let cubeImages=[]
+  let loadedImages = 0;
+  let cubeImages = [];
   for (let i = 0; i < 6; i++) {
     imagei = new Image();
-    srcs = ["+X","-X","+Y","-Y","+Z","-Z"]
-    imagei.src = "data2/cubeMap"+srcs[i]+".png";
+    srcs = ["+X", "-X", "+Y", "-Y", "+Z", "-Z"];
+    imagei.src = "data2/cubeMap" + srcs[i] + ".png";
     imagei.onload = () => {
       loadedImages++;
-      if(loadedImages===6) {
+      if (loadedImages === 6) {
         configureCubeMap(cubeImages);
       }
     };
     cubeImages.push(imagei);
   }
-
-
 
   // Add key binding
   document.addEventListener("keydown", (event) => getKeyDown(event));
@@ -120,17 +116,17 @@ function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   // Update camera matrix
+  let currentCameraPos = vec3(2 * Math.sin(alpha), beta, 2 * Math.cos(alpha));
   pushMat4Uniform(
     mult(
       perspective(45, canvas.width / canvas.height, 0.1, 500),
-      lookAt(
-        vec3(2 * Math.sin(alpha), beta, 2 * Math.cos(alpha)),
-        vec3(0, 0, 0),
-        vec3(0, 1, 0),
-      ),
+      lookAt(currentCameraPos, vec3(0, 0, 0), vec3(0, 1, 0)),
     ),
     "projMatrix",
   );
+
+  // Push the camera position to the vertex shader
+  pushVec3Uniform(currentCameraPos, "cameraPosition");
 
   // Configure lighting
   pushVec4Uniform(lightPosition, "lightPosition");
@@ -138,21 +134,28 @@ function render() {
   pushVec4Uniform(lightSpecular, "lightSpecular");
   pushVec4Uniform(lightAmbient, "lightAmbient");
 
-  gl.uniform1i(gl.getUniformLocation(program, "isSkybox"), 0);
+  // Reset rendering state
+  pushIntUniform(0, "isSkybox");
+  pushIntUniform(0, "isReflective");
+  pushIntUniform(0, "isRefractive");
 
   // Render table
   let tableTransform = translate(0.2, 0.18, 0);
   renderModel(table, tableTransform, 15, null, tableCache);
 
   // Render glass
+  pushIntUniform(1, "isReflective");
+  pushIntUniform(1, "isRefractive");
   let glassBaseTransform = rotateX(-90);
   renderModel(
     glass,
     mult(translate(0.2, 0, -0.1), glassBaseTransform),
     80,
-    vec4(0.5, 0.5, 0.5, 0.2),
+    vec4(0.0, 0.0, 0.0, 1.0),
     glassCache,
   );
+  pushIntUniform(0, "isReflective");
+  pushIntUniform(0, "isRefractive");
 
   // Render fork
   let forkAnimateTime1 = Math.min(1.0, Math.max(0.0, time - 1.0));
@@ -180,6 +183,7 @@ function render() {
   // Values for default fork positioning
   let forkBaseTranslate = translate(-0.2, 0.015, -0.3);
   let forkBaseTransform = mult(rotateZ(90), scalem(0.05, 0.05, 0.05));
+  pushIntUniform(1, "isReflective");
   renderModel(
     fork,
     mult(
@@ -187,9 +191,10 @@ function render() {
       mult(forkBaseTranslate, mult(forkRotation, forkBaseTransform)),
     ),
     120,
-    vec4(0.5, 0.5, 0.5, 1.0),
+    vec4(0.2, 0.2, 0.2, 1.0),
     forkCache,
   );
+  pushIntUniform(0, "isReflective");
 
   let plateSlideTime = Math.min(time, 1.0);
   let plateGroupTransform = translate(0.8 * (1 - plateSlideTime), 0, 0);
@@ -199,13 +204,15 @@ function render() {
     translate(0, 0, -0.3),
     mult(scalem(0.5, 1, 0.5), rotateX(-90)),
   );
+  pushIntUniform(1, "isReflective");
   renderModel(
     plate,
     mult(plateGroupTransform, plateBaseTransform),
     60,
-    vec4(0.5, 0.5, 0.5, 1.0),
+    vec4(0.2, 0.2, 0.2, 1.0),
     plateCache,
   );
+  pushIntUniform(0, "isReflective");
 
   // Render cubes
   renderModel(
@@ -243,15 +250,15 @@ function render() {
     cubeCache,
   );
 
-  //render skybox
-  gl.uniform1i(gl.getUniformLocation(program, "isSkybox"), 1);
+  // Render skybox
+  pushIntUniform(1, "isSkybox");
   renderModel(
-      cube,
-      mult(translate(0,1.19,0),scalem(2,2,2)),
-      15,
-      null,
-      cubeCache
-  )
+    cube,
+    mult(translate(0, 1.19, 0), scalem(2, 2, 2)),
+    15,
+    null,
+    cubeCache,
+  );
 
   window.requestAnimationFrame(render);
 }
@@ -269,7 +276,7 @@ function getKeyDown(e) {
   if (e.key === "ArrowDown") {
     beta -= 0.1;
   }
-  beta = Math.min(Math.max(beta,-2),2)
+  beta = Math.min(Math.max(beta, -2), 2);
   if (e.key === " ") {
     playing = !playing;
   }
@@ -379,12 +386,54 @@ function configureCubeMap(images) {
   gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[0]);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[1]);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[2]);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[3]);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[4]);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[5]);
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[0],
+  );
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[1],
+  );
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[2],
+  );
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[3],
+  );
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[4],
+  );
+  gl.texImage2D(
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    0,
+    gl.RGB,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    images[5],
+  );
 
   gl.uniform1i(gl.getUniformLocation(program, "texMap"), 1);
 }
@@ -427,6 +476,12 @@ function pushFloatUniform(data, uniName) {
 function pushVec4Uniform(data, uniName) {
   let uniform = gl.getUniformLocation(program, uniName);
   gl.uniform4fv(uniform, data);
+}
+
+/** Push a uniform with a vec3 value. */
+function pushVec3Uniform(data, uniName) {
+  let uniform = gl.getUniformLocation(program, uniName);
+  gl.uniform3fv(uniform, data);
 }
 
 /** Push a uniform with a mat4 value. */

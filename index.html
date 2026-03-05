@@ -11,8 +11,9 @@
 
       uniform mat4 projMatrix;
       uniform mat4 modelMatrix;
-      varying vec3 L, N, V;
+      varying vec3 L, N, V, R, T;
       uniform vec4 lightPosition;
+      uniform vec3 cameraPosition;
       varying vec2 fTexCoord;
       varying vec3 fCubeCoord;
       varying vec4 fColorBase;
@@ -28,6 +29,12 @@
         // Specular lighting
         V = normalize(-pos);
 
+        // Reflection and refraction
+        vec3 worldPos = (modelMatrix * vPosition).xyz;
+        vec3 I = normalize(worldPos - cameraPosition);
+        R = reflect(I, N);
+        T = refract(I, N, 0.65);
+
         // Position and color
         gl_Position = projMatrix * modelMatrix * vPosition;
         fTexCoord = vTexCoord;
@@ -42,7 +49,7 @@
       uniform vec4 lightDiffuse, lightSpecular, lightAmbient;
       uniform vec4 materialDiffuse, materialSpecular, materialAmbient;
       uniform float shininess;
-      varying vec3 L, N, V;
+      varying vec3 L, N, V, R, T;
       varying vec2 fTexCoord;
       varying vec3 fCubeCoord;
       varying vec4 fColorBase;
@@ -51,7 +58,8 @@
       uniform sampler2D tex0;
       uniform samplerCube texMap;
       uniform bool isSkybox;
-
+      uniform bool isReflective;
+      uniform bool isRefractive;
 
       void main() {
         // Diffuse lighting
@@ -65,15 +73,23 @@
         vec4 ambient = lightAmbient * materialAmbient;
 
         vec4 fColor = fColorBase + diffuse + specular + ambient;
-        if (hasTexture) {
+        if (isReflective && isRefractive) {
+          vec4 reflectColor = textureCube(texMap, R);
+          vec4 refractColor = textureCube(texMap, T);
+          fColor = mix(refractColor, reflectColor, 0.3) + fColorBase;
+          fColor.a = 0.5;
+        } else if (isReflective) {
+          vec4 reflectColor = textureCube(texMap, R);
+          fColor = reflectColor + fColor;
+        } else if (hasTexture) {
           if(isSkybox){
             fColor = textureCube(texMap, fCubeCoord);
           }
           else{
             fColor = fColor + texture2D(tex0, fTexCoord);
           }
+          fColor.a = 1.0;
         }
-        fColor.a = 1.0;
 
         gl_FragColor = fColor;
       }
