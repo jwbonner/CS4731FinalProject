@@ -26,6 +26,11 @@ var lightAmbient = vec4(1.0, 1.0, 1.0, 1.0);
 let alpha = 0.4;
 let beta = 1;
 let playing = true;
+let cameraMoving = true;
+
+let diffuseEnabled = true;
+let shadowsEnabled = true;
+
 
 function main() {
   // Retrieve <canvas> element
@@ -86,9 +91,9 @@ function main() {
   let loadedImages = 0;
   let cubeImages = [];
   for (let i = 0; i < 6; i++) {
-    imagei = new Image();
-    srcs = ["+X", "-X", "+Y", "-Y", "+Z", "-Z"];
-    imagei.src = "data2/cubeMap" + srcs[i] + ".png";
+    let imagei = new Image();
+    const srcs = ["+X","-X","+Y","-Y","+Z","-Z"]
+    imagei.src = "data2/cubeMap"+srcs[i]+".png";
     imagei.onload = () => {
       loadedImages++;
       if (loadedImages === 6) {
@@ -113,6 +118,10 @@ function render() {
   }
   realtime = realtime % 8;
   time = Math.min(realtime, 8 - realtime);
+
+  if(cameraMoving) {
+    alpha+=0.01;
+  }
 
   // Clear canvas by clearing the color buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -268,24 +277,38 @@ function render() {
 }
 
 function getKeyDown(e) {
-  if (e.key === "ArrowLeft") {
-    alpha -= 0.1;
+  if(!cameraMoving) {
+    if (e.key === "ArrowLeft") {
+      alpha -= 0.1;
+    }
+    if (e.key === "ArrowRight") {
+      alpha += 0.1;
+    }
+    if (e.key === "ArrowUp") {
+      beta += 0.1;
+    }
+    if (e.key === "ArrowDown") {
+      beta -= 0.1;
+    }
+
+    beta = Math.min(Math.max(beta, -0.8), 2);
   }
-  if (e.key === "ArrowRight") {
-    alpha += 0.1;
+  if(e.key.toUpperCase() ==="C"){
+    cameraMoving = !cameraMoving;
   }
-  if (e.key === "ArrowUp") {
-    beta += 0.1;
-  }
-  if (e.key === "ArrowDown") {
-    beta -= 0.1;
-  }
-  beta = Math.min(Math.max(beta, -2), 2);
   if (e.key === " ") {
     playing = !playing;
   }
   if (e.key.toUpperCase() === "R") {
     realtime = 0;
+  }
+
+  if (e.key.toUpperCase() === "S") {
+    shadowsEnabled=!shadowsEnabled;
+  }
+  if (e.key.toUpperCase() === "L") {
+    diffuseEnabled = !diffuseEnabled;
+    gl.uniform1i(gl.getUniformLocation(program, "diffuseEnabled"), diffuseEnabled?1:0);
   }
 }
 
