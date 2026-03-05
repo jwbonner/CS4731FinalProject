@@ -79,7 +79,7 @@
         // Spotlight
         vec4 spotlight;
         if (dot(L_spotlight, -normalize(spotlightDirection)) > 0.98) {
-           spotlight = (lightDiffuse * materialDiffuse * dot(L_spotlight, N) * 2.0);
+           spotlight = (lightDiffuse * materialDiffuse * dot(L_spotlight, N) * 1.0);
         }
 
         vec4 fColor;
