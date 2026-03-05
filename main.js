@@ -219,7 +219,7 @@ function render() {
   pushIntUniform(0, "isReflective");
 
   // Render shadow for fork
-  if (diffuseEnabled) {
+  if (diffuseEnabled && shadowsEnabled) {
     pushIntUniform(1, "isShadow");
     let shadowMatrix = mat4();
     shadowMatrix[3][3] = 0;
