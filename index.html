@@ -83,7 +83,7 @@
         }
 
         vec4 fColor;
-        if(!diffuseEnabled){
+        if(diffuseEnabled){
           fColor = fColorBase + diffuse + specular + ambient + spotlight;
         }
         else{

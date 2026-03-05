@@ -104,6 +104,12 @@ function main() {
     cubeImages.push(imagei);
   }
 
+  // Enable Diffuse
+  gl.uniform1i(
+      gl.getUniformLocation(program, "diffuseEnabled"),
+      diffuseEnabled ? 1 : 0,
+  );
+
   // Add key binding
   document.addEventListener("keydown", (event) => getKeyDown(event));
 
