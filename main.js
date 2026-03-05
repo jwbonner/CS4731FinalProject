@@ -20,8 +20,8 @@ var lightPosition = vec4(-5, -5, 0, 1.0);
 var spotlightPosition = vec4(-5, 0, 0, 1.0);
 var spotlightDirection = vec3(5, 0, 0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
-var lightSpecular = vec4(0.2, 0.2, 0.2, 1.0);
-var lightAmbient = vec4(1.0, 1.0, 1.0, 1.0);
+var lightSpecular = vec4(0.6, 0.6, 0.6, 1.0);
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 
 let alpha = 0.4;
 let beta = 1;
@@ -52,6 +52,10 @@ function main() {
 
   // Enable depth testing
   gl.enable(gl.DEPTH_TEST);
+
+  // Enable blending for translucency
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   // Initialize shaders
   program = initShaders(gl, "vshader", "fshader");
@@ -165,20 +169,6 @@ function render() {
   let tableTransform = translate(0.2, 0.18, 0);
   renderModel(table, tableTransform, 15, null, tableCache);
 
-  // Render glass
-  pushIntUniform(1, "isReflective");
-  pushIntUniform(1, "isRefractive");
-  let glassBaseTransform = rotateX(-90);
-  renderModel(
-    glass,
-    mult(translate(0.2, 0, -0.1), glassBaseTransform),
-    80,
-    vec4(0.0, 0.0, 0.0, 1.0),
-    glassCache,
-  );
-  pushIntUniform(0, "isReflective");
-  pushIntUniform(0, "isRefractive");
-
   // Render fork
   let forkAnimateTime1 = Math.min(1.0, Math.max(0.0, time - 1.0));
   let forkAnimateTime2 = Math.min(1.0, Math.max(0.0, time - 2.0));
@@ -218,42 +208,12 @@ function render() {
   );
   pushIntUniform(0, "isReflective");
 
-  // Render shadow for fork
-  if (diffuseEnabled && shadowsEnabled) {
-    pushIntUniform(1, "isShadow");
-    let shadowMatrix = mat4();
-    shadowMatrix[3][3] = 0;
-    shadowMatrix[3][1] = -1 / lightPosition[1];
-    shadowMatrix = mult(
-      shadowMatrix,
-      translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]),
-    );
-    shadowMatrix = mult(
-      translate(lightPosition[0], lightPosition[1], lightPosition[2]),
-      shadowMatrix,
-    );
-    shadowMatrix = mult(translate(0.0, 0.01, 0.0), shadowMatrix);
-    pushMat4Uniform(shadowMatrix, "shadowMatrix");
-    renderModel(
-      fork,
-      mult(
-        forkTranslate,
-        mult(forkBaseTranslate, mult(forkRotation, forkBaseTransform)),
-      ),
-      120,
-      vec4(1.0, 1.0, 1.0, 1.0),
-      forkCache,
-    );
-    pushIntUniform(0, "isShadow");
-    pushMat4Uniform(mat4(), "shadowMatrix");
-  }
-
   let plateSlideTime = Math.min(time, 1.0);
   let plateGroupTransform = translate(0.8 * (1 - plateSlideTime), 0, 0);
 
   // Render plate
   let plateBaseTransform = mult(
-    translate(0, 0, -0.3),
+    translate(0, 0.01, -0.3),
     mult(scalem(0.5, 1, 0.5), rotateX(-90)),
   );
   pushIntUniform(1, "isReflective");
@@ -271,7 +231,7 @@ function render() {
     cube,
     mult(
       plateGroupTransform,
-      mult(translate(0.02, 0.02, -0.34), scalem(0.01, 0.01, 0.01)),
+      mult(translate(0.02, 0.03, -0.34), scalem(0.01, 0.01, 0.01)),
     ),
     15,
     vec4(0.0, 0.0, 1.0, 1.0),
@@ -281,7 +241,7 @@ function render() {
     cube,
     mult(
       plateGroupTransform,
-      mult(translate(-0.01, 0.02, -0.23), scalem(0.01, 0.01, 0.01)),
+      mult(translate(-0.01, 0.03, -0.23), scalem(0.01, 0.01, 0.01)),
     ),
     15,
     vec4(0.0, 1.0, 1.0, 1.0),
@@ -294,7 +254,7 @@ function render() {
       forkUp,
       mult(
         plateGroupTransform,
-        mult(translate(-0.05, 0.02, -0.32), scalem(0.01, 0.01, 0.01)),
+        mult(translate(-0.05, 0.03, -0.32), scalem(0.01, 0.01, 0.01)),
       ),
     ),
     15,
@@ -311,6 +271,64 @@ function render() {
     null,
     cubeCache,
   );
+
+  // Render shadows for fork, plate, and glass
+  let glassBaseTransform = rotateX(-90);
+  let shadowMatrix = mat4();
+  shadowMatrix[3][3] = 0;
+  shadowMatrix[3][1] = -1 / lightPosition[1];
+  shadowMatrix = mult(
+    shadowMatrix,
+    translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]),
+  );
+  shadowMatrix = mult(
+    translate(lightPosition[0], lightPosition[1], lightPosition[2]),
+    shadowMatrix,
+  );
+  shadowMatrix = mult(translate(0.0, 0.01, 0.0), shadowMatrix);
+  if (diffuseEnabled && shadowsEnabled) {
+    pushIntUniform(1, "isShadow");
+    pushMat4Uniform(shadowMatrix, "shadowMatrix");
+    renderModel(
+      fork,
+      mult(
+        forkTranslate,
+        mult(forkBaseTranslate, mult(forkRotation, forkBaseTransform)),
+      ),
+      120,
+      vec4(1.0, 1.0, 1.0, 1.0),
+      forkCache,
+    );
+    renderModel(
+      plate,
+      mult(plateGroupTransform, plateBaseTransform),
+      60,
+      vec4(1.0, 1.0, 1.0, 1.0),
+      plateCache,
+    );
+    renderModel(
+      glass,
+      mult(translate(0.2, 0, -0.1), glassBaseTransform),
+      80,
+      vec4(0.0, 0.0, 0.0, 1.0),
+      glassCache,
+    );
+    pushIntUniform(0, "isShadow");
+    pushMat4Uniform(mat4(), "shadowMatrix");
+  }
+
+  // Render glass
+  pushIntUniform(1, "isReflective");
+  pushIntUniform(1, "isRefractive");
+  renderModel(
+    glass,
+    mult(translate(0.2, 0, -0.1), glassBaseTransform),
+    80,
+    vec4(0.0, 0.0, 0.0, 1.0),
+    glassCache,
+  );
+  pushIntUniform(0, "isReflective");
+  pushIntUniform(0, "isRefractive");
 
   window.requestAnimationFrame(render);
 }

@@ -25,8 +25,7 @@
 
       void main() {
         // Diffuse lighting
-        vec4 nm = vNormal;
-        nm.w = 1.0;
+        vec4 nm = vPosition;
         vec3 pos = (modelMatrix * nm).xyz;
         L = normalize(lightPosition.xyz - pos);
         L_spotlight = normalize(spotlightPosition.xyz - pos);
@@ -74,8 +73,8 @@
       void main() {
         // Point light
         vec4 diffuse = lightDiffuse * materialDiffuse * dot(L, N);
-        vec3 R = 2.0 * (dot(L, N) * N) - L;
-        vec4 specular = lightSpecular * materialSpecular * pow(max(dot(V, R), 0.0), shininess);
+        vec3 R_light = 2.0 * (dot(L, N) * N) - L;
+        vec4 specular = lightSpecular * materialSpecular * pow(max(dot(V, R_light), 0.0), shininess);
         vec4 ambient = lightAmbient * materialAmbient;
 
         // Spotlight
@@ -97,11 +96,11 @@
         if (isReflective && isRefractive) {
           vec4 reflectColor = textureCube(texMap, R);
           vec4 refractColor = textureCube(texMap, T);
-          fColor = mix(refractColor, reflectColor, 0.3) * fColor;
+          fColor = mix(refractColor, reflectColor, 0.8) + fColor;
           fColor.a = 0.5;
         } else if (isReflective) {
           vec4 reflectColor = textureCube(texMap, R);
-          fColor = reflectColor * 0.75 + fColor * 0.25;
+          fColor = reflectColor * 0.25 + fColor * 0.75;
         } else if (hasTexture) {
           if (isSkybox){
             fColor = textureCube(texMap, fCubeCoord);

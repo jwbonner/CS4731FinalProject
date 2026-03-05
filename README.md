@@ -15,8 +15,8 @@ lifts up and picks up some food.
 5. The table is textured and has a default texture.
 6. The camera can be controlled using the arrow keys.
 7. There is a hierarchical model consisting of the plate as a grandparent, the food as a parent and the one piece of lifted food as a child.
-8. There is clearly a projection shadow from the fork.
-9. The fork is reflective.
+8. There is clearly a projection shadow from the fork, plate, and glass.
+9. The fork, plate, and glass are reflective.
 10. The glass is refractive.
 11. There is a textured skybox showing the interior of a room.
 12. Keyboard controls:
