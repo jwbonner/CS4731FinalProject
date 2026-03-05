@@ -21,9 +21,10 @@ var lightDiffuse = vec4(0.3, 0.3, 0.3, 1.0);
 var lightSpecular = vec4(0.2, 0.2, 0.2, 1.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 
-let alpha = 0;
+let alpha=0.4;
 let beta = 1;
 let playing = true;
+
 
 function main() {
   // Retrieve <canvas> element
@@ -80,6 +81,25 @@ function main() {
     configureTexture(image);
   };
 
+
+  // Load Cubemap
+  let loadedImages=0
+  let cubeImages=[]
+  for (let i = 0; i < 6; i++) {
+    imagei = new Image();
+    srcs = ["+X","-X","+Y","-Y","+Z","-Z"]
+    imagei.src = "data2/cubeMap"+srcs[i]+".png";
+    imagei.onload = () => {
+      loadedImages++;
+      if(loadedImages===6) {
+        configureCubeMap(cubeImages);
+      }
+    };
+    cubeImages.push(imagei);
+  }
+
+
+
   // Add key binding
   document.addEventListener("keydown", (event) => getKeyDown(event));
 
@@ -95,7 +115,6 @@ function render() {
   }
   realtime = realtime % 8;
   time = Math.min(realtime, 8 - realtime);
-  console.log(time);
 
   // Clear canvas by clearing the color buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -118,6 +137,8 @@ function render() {
   pushVec4Uniform(lightDiffuse, "lightDiffuse");
   pushVec4Uniform(lightSpecular, "lightSpecular");
   pushVec4Uniform(lightAmbient, "lightAmbient");
+
+  gl.uniform1i(gl.getUniformLocation(program, "isSkybox"), 0);
 
   // Render table
   let tableTransform = translate(0.2, 0.18, 0);
@@ -176,7 +197,7 @@ function render() {
   // Render plate
   let plateBaseTransform = mult(
     translate(0, 0, -0.3),
-    mult(scalem(0.5, 0.5, 0.5), rotateX(-90)),
+    mult(scalem(0.5, 1, 0.5), rotateX(-90)),
   );
   renderModel(
     plate,
@@ -222,11 +243,20 @@ function render() {
     cubeCache,
   );
 
+  //render skybox
+  gl.uniform1i(gl.getUniformLocation(program, "isSkybox"), 1);
+  renderModel(
+      cube,
+      mult(translate(0,1.19,0),scalem(2,2,2)),
+      15,
+      null,
+      cubeCache
+  )
+
   window.requestAnimationFrame(render);
 }
 
 function getKeyDown(e) {
-  console.log(e.key);
   if (e.key === "ArrowLeft") {
     alpha -= 0.1;
   }
@@ -239,6 +269,7 @@ function getKeyDown(e) {
   if (e.key === "ArrowDown") {
     beta -= 0.1;
   }
+  beta = Math.min(Math.max(beta,-2),2)
   if (e.key === " ") {
     playing = !playing;
   }
@@ -335,6 +366,27 @@ function configureTexture(image) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
   gl.uniform1i(gl.getUniformLocation(program, "tex0"), 0);
+}
+
+function configureCubeMap(images) {
+  let cubeMap = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeMap);
+
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[0]);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[1]);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[2]);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[3]);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[4]);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[5]);
+
+  gl.uniform1i(gl.getUniformLocation(program, "texMap"), 1);
 }
 
 /** Push an attribute of vec4 values. */
