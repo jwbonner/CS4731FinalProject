@@ -16,7 +16,7 @@ let forkCache = { vertices: [], normals: [], texCoords: [] };
 
 let cubeCache = { vertices: [], normals: [], texCoords: [] };
 
-var lightPosition = vec4(5, -5, 5, 1.0);
+var lightPosition = vec4(-5, -5, 0, 1.0);
 var spotlightPosition = vec4(-5, 0, 0, 1.0);
 var spotlightDirection = vec3(5, 0, 0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
@@ -106,8 +106,8 @@ function main() {
 
   // Enable Diffuse
   gl.uniform1i(
-      gl.getUniformLocation(program, "diffuseEnabled"),
-      diffuseEnabled ? 1 : 0,
+    gl.getUniformLocation(program, "diffuseEnabled"),
+    diffuseEnabled ? 1 : 0,
   );
 
   // Add key binding
@@ -158,6 +158,8 @@ function render() {
   pushIntUniform(0, "isSkybox");
   pushIntUniform(0, "isReflective");
   pushIntUniform(0, "isRefractive");
+  pushIntUniform(0, "isShadow");
+  pushMat4Uniform(mat4(), "shadowMatrix");
 
   // Render table
   let tableTransform = translate(0.2, 0.18, 0);
@@ -201,7 +203,7 @@ function render() {
   );
 
   // Values for default fork positioning
-  let forkBaseTranslate = translate(-0.2, 0.015, -0.3);
+  let forkBaseTranslate = translate(-0.2, 0.02, -0.3);
   let forkBaseTransform = mult(rotateZ(90), scalem(0.05, 0.05, 0.05));
   pushIntUniform(1, "isReflective");
   renderModel(
@@ -215,6 +217,36 @@ function render() {
     forkCache,
   );
   pushIntUniform(0, "isReflective");
+
+  // Render shadow for fork
+  if (diffuseEnabled) {
+    pushIntUniform(1, "isShadow");
+    let shadowMatrix = mat4();
+    shadowMatrix[3][3] = 0;
+    shadowMatrix[3][1] = -1 / lightPosition[1];
+    shadowMatrix = mult(
+      shadowMatrix,
+      translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]),
+    );
+    shadowMatrix = mult(
+      translate(lightPosition[0], lightPosition[1], lightPosition[2]),
+      shadowMatrix,
+    );
+    shadowMatrix = mult(translate(0.0, 0.01, 0.0), shadowMatrix);
+    pushMat4Uniform(shadowMatrix, "shadowMatrix");
+    renderModel(
+      fork,
+      mult(
+        forkTranslate,
+        mult(forkBaseTranslate, mult(forkRotation, forkBaseTransform)),
+      ),
+      120,
+      vec4(1.0, 1.0, 1.0, 1.0),
+      forkCache,
+    );
+    pushIntUniform(0, "isShadow");
+    pushMat4Uniform(mat4(), "shadowMatrix");
+  }
 
   let plateSlideTime = Math.min(time, 1.0);
   let plateGroupTransform = translate(0.8 * (1 - plateSlideTime), 0, 0);

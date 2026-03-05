@@ -13,6 +13,7 @@
 
       uniform mat4 projMatrix;
       uniform mat4 modelMatrix;
+      uniform mat4 shadowMatrix;
       varying vec3 L, L_spotlight, N, V, R, T;
       uniform vec4 lightPosition;
       uniform vec4 spotlightPosition;
@@ -41,7 +42,7 @@
         T = refract(I, N, 0.65);
 
         // Position and color
-        gl_Position = projMatrix * modelMatrix * vPosition;
+        gl_Position = projMatrix * shadowMatrix * modelMatrix * vPosition;
         fTexCoord = vTexCoord;
         fColorBase = colorBase;
         fCubeCoord = vPosition.xyz;
@@ -68,6 +69,7 @@
       uniform bool isSkybox;
       uniform bool isReflective;
       uniform bool isRefractive;
+      uniform bool isShadow;
 
       void main() {
         // Point light
@@ -83,10 +85,13 @@
         }
 
         vec4 fColor;
-        if(diffuseEnabled){
-          fColor = fColorBase + diffuse + specular + ambient + spotlight;
-        }
-        else{
+        if (diffuseEnabled) {
+          if (isShadow) {
+            fColor = vec4(0.0, 0.0, 0.0, 1.0);
+          } else {
+            fColor = fColorBase + diffuse + specular + ambient + spotlight;
+          }
+        } else {
           fColor = fColorBase + ambient + spotlight;
         }
         if (isReflective && isRefractive) {
