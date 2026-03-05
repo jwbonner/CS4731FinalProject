@@ -31,7 +31,6 @@ let cameraMoving = true;
 let diffuseEnabled = true;
 let shadowsEnabled = true;
 
-
 function main() {
   // Retrieve <canvas> element
   canvas = document.getElementById("webgl");
@@ -68,21 +67,22 @@ function main() {
   );
 
   // Load the models
-  table = new Model("data2/wooden_table.obj", "data2/wooden_table.mtl");
-  plate = new Model("data2/plate.obj", "data2/plate.mtl");
+  let baseUrl =
+    "http://raw.githubusercontent.com/jwbonner/CS4731FinalProject/refs/heads/main/data/";
+  table = new Model(baseUrl + "wooden_table.obj", baseUrl + "wooden_table.mtl");
+  plate = new Model(baseUrl + "plate.obj", baseUrl + "plate.mtl");
   glass = new Model(
-    "data2/tall-drinking-glass.obj",
-    "data2/tall-drinking-glass.mtl",
+    baseUrl + "tall-drinking-glass.obj",
+    baseUrl + "tall-drinking-glass.mtl",
   );
-  fork = new Model("data2/lowpoly-fork.obj", "data2/lowpoly-fork.mtl");
-
-  cube = new Model("data2/cube.obj", "data2/cube.mtl");
+  fork = new Model(baseUrl + "lowpoly-fork.obj", baseUrl + "lowpoly-fork.mtl");
+  cube = new Model(baseUrl + "cube.obj", baseUrl + "cube.mtl");
 
   // Load textures
   configureDefaultTexture();
   let image = new Image();
   image.crossOrigin = "";
-  image.src = "data2/wood.jpg";
+  image.src = baseUrl + "wood.jpg";
   image.onload = () => {
     configureTexture(image);
   };
@@ -92,8 +92,9 @@ function main() {
   let cubeImages = [];
   for (let i = 0; i < 6; i++) {
     let imagei = new Image();
-    const srcs = ["+X","-X","+Y","-Y","+Z","-Z"]
-    imagei.src = "data2/cubeMap"+srcs[i]+".png";
+    const srcs = ["+X", "-X", "+Y", "-Y", "+Z", "-Z"];
+    imagei.crossOrigin = "";
+    imagei.src = baseUrl + "cubeMap" + srcs[i] + ".png";
     imagei.onload = () => {
       loadedImages++;
       if (loadedImages === 6) {
@@ -119,8 +120,8 @@ function render() {
   realtime = realtime % 8;
   time = Math.min(realtime, 8 - realtime);
 
-  if(cameraMoving) {
-    alpha+=0.01;
+  if (cameraMoving) {
+    alpha += 0.01;
   }
 
   // Clear canvas by clearing the color buffer
@@ -277,7 +278,7 @@ function render() {
 }
 
 function getKeyDown(e) {
-  if(!cameraMoving) {
+  if (!cameraMoving) {
     if (e.key === "ArrowLeft") {
       alpha -= 0.1;
     }
@@ -293,7 +294,7 @@ function getKeyDown(e) {
 
     beta = Math.min(Math.max(beta, -0.8), 2);
   }
-  if(e.key.toUpperCase() ==="C"){
+  if (e.key.toUpperCase() === "C") {
     cameraMoving = !cameraMoving;
   }
   if (e.key === " ") {
@@ -304,11 +305,14 @@ function getKeyDown(e) {
   }
 
   if (e.key.toUpperCase() === "S") {
-    shadowsEnabled=!shadowsEnabled;
+    shadowsEnabled = !shadowsEnabled;
   }
   if (e.key.toUpperCase() === "L") {
     diffuseEnabled = !diffuseEnabled;
-    gl.uniform1i(gl.getUniformLocation(program, "diffuseEnabled"), diffuseEnabled?1:0);
+    gl.uniform1i(
+      gl.getUniformLocation(program, "diffuseEnabled"),
+      diffuseEnabled ? 1 : 0,
+    );
   }
 }
 
